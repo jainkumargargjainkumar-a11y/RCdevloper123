@@ -14,7 +14,6 @@
         
         #app { display: flex; flex-direction: column; height: 100dvh; width: 100%; max-width: 600px; margin: auto; background: var(--card); }
         
-        /* Header Fix: Theme button and Brand */
         header { 
             padding: 10px 15px; 
             display: flex; 
@@ -33,19 +32,23 @@
         .user-wrap { align-items: flex-end; }
         .ai-wrap { align-items: flex-start; }
         
-        /* User Bubble Size Fix */
         .bubble { 
             padding: 10px 16px; 
             border-radius: 20px; 
             font-size: 15px; 
             line-height: 1.4; 
             word-wrap: break-word; 
-            max-width: 75%; 
+            max-width: 80%; 
             width: fit-content; 
             display: inline-block;
         }
         .user-bubble { background: var(--user-bg); color: #000; border-bottom-right-radius: 4px; font-weight: 500; }
         .ai-bubble { background: transparent; border-left: 3px solid var(--neon); padding-left: 12px; color: var(--text); max-width: 100%; }
+
+        /* Action Buttons Styling */
+        .action-btns { display: flex; gap: 8px; margin-top: 8px; margin-left: 12px; }
+        .small-btn { background: rgba(255,255,255,0.05); border: 1px solid #444; color: var(--text); font-size: 10px; padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+        .small-btn:active { background: var(--neon); color: #000; }
 
         .loader-container { display: none; align-items: center; gap: 8px; padding: 10px 15px; }
         .spinner { width: 16px; height: 16px; border: 2px solid rgba(0, 255, 163, 0.2); border-top: 2px solid var(--neon); border-radius: 50%; animation: spin 0.8s linear infinite; }
@@ -56,7 +59,6 @@
         .input-wrap { flex: 1; background: rgba(255,255,255,0.08); border: 1px solid #333; border-radius: 20px; padding: 2px 12px; max-height: 100px; overflow-y: auto; }
         textarea { width: 100%; background: transparent; border: none; color: var(--text); padding: 10px 0; outline: none; font-size: 16px; resize: none; height: 40px; display: block; }
         
-        /* Purana Neon Send Button */
         .btn-send { background: var(--neon); color: #000; border: none; padding: 10px 22px; border-radius: 25px; font-weight: 900; cursor: pointer; flex-shrink: 0; font-size: 14px; box-shadow: 0 0 10px rgba(0, 255, 163, 0.3); }
     </style>
 </head>
@@ -66,11 +68,12 @@
     <header>
         <button id="theme-btn" onclick="toggleTheme()">🎨</button>
         <div class="brand">GEMINI<span style="color:var(--neon)">X</span> PRO</div>
+        <div style="width:35px"></div>
     </header>
     
     <div id="chat">
         <div class="msg-wrap ai-wrap">
-            <div class="bubble ai-bubble">नमस्ते! I can speak in Hindi or English. आप जो भाषा चुनेंगे, मैं उसी में जवाब दूँगी।</div>
+            <div class="bubble ai-bubble">नमस्ते! I'm back with the copy button. आप जिस भाषा में पूछेंगे, मैं उसी में जवाब दूँगी।</div>
         </div>
     </div>
 
@@ -92,10 +95,16 @@
     function toggleTheme() { document.body.classList.toggle('light-theme'); }
     function autoGrow(element) { element.style.height = "5px"; element.style.height = (element.scrollHeight) + "px"; }
 
+    function speak(text) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text.replace(/[#*`_]/g, ''));
+        // Hindi detection logic
+        utterance.lang = /[क-ह]/.test(text) ? 'hi-IN' : 'en-US';
+        window.speechSynthesis.speak(utterance);
+    }
+
     const API_KEY = "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"; 
-    
-    // STRICT LANGUAGE INSTRUCTION (No Hinglish)
-    let chatHistory = [{role: "system", content: "You are GeminiX Pro. Strictly respond in the language the user uses. If the user asks in Hindi, reply in 100% Hindi. If the user asks in English, reply in 100% English. Do not mix both languages in a single response unless requested."}];
+    let chatHistory = [{role: "system", content: "You are GeminiX Pro. Strictly respond in the language the user uses. Hindi to Hindi, English to English. No mixing."}];
 
     async function ask() {
         const p = document.getElementById('prompt');
@@ -134,10 +143,34 @@
         bubble.className = `bubble ${sender}-bubble`;
         bubble.innerHTML = marked.parse(txt);
         wrap.appendChild(bubble);
+
+        // Copy aur Listen Buttons sirf AI ke liye
+        if(sender === 'ai') {
+            const btnDiv = document.createElement('div');
+            btnDiv.className = "action-btns";
+            
+            const copyBtn = document.createElement('button');
+            copyBtn.className = "small-btn"; 
+            copyBtn.innerHTML = "📋 Copy";
+            copyBtn.onclick = () => {
+                navigator.clipboard.writeText(txt);
+                copyBtn.innerHTML = "✅ Copied";
+                setTimeout(() => copyBtn.innerHTML = "📋 Copy", 2000);
+            };
+
+            const speakBtn = document.createElement('button');
+            speakBtn.className = "small-btn"; 
+            speakBtn.innerHTML = "🔊 Listen";
+            speakBtn.onclick = () => speak(txt);
+
+            btnDiv.appendChild(copyBtn);
+            btnDiv.appendChild(speakBtn);
+            wrap.appendChild(btnDiv);
+        }
+
         chat.appendChild(wrap);
         return wrap;
     }
 </script>
 </body>
-    </html>
-                    
+</html>
